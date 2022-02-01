@@ -10,6 +10,7 @@ class Application(tinker.Tk):
         self.frame = None
         self.switchFrame(mainMenu)
 
+    #Function used to switch between various Windows
     def switchFrame(self, nFrame):
 
         newFrame = nFrame(self)
@@ -20,6 +21,7 @@ class Application(tinker.Tk):
         self.frame = newFrame
         self.frame.pack()
 
+#Starts the application
 screen = Application()
 screen.title("Green Grocery")
 screen.mainloop()

@@ -14,6 +14,7 @@ class Application(tinker.Tk):
         self.frame = None
         self.switchFrame(mainMenu)
 
+    #Function used to switch between various Windows
     def switchFrame(self, nFrame):
 
         newFrame = nFrame(self)
@@ -24,6 +25,7 @@ class Application(tinker.Tk):
         self.frame = newFrame
         self.frame.pack()
 
+#MainMenu Class
 class mainMenu(tinker.Frame):
     
     def __init__(self, master):
@@ -41,31 +43,38 @@ class mainMenu(tinker.Frame):
             self, text = "Choose a Menu",)
         self.introTitle.grid(row=2, column=0, columnspan=3)
 
+        #Buttons 
+        #Button to access Branch Table
         self.branchButton = tinker.Button(self, text = "Branch", 
                                         command = lambda: self.master.switchFrame(branch),
                                         height= 10, width=30)
         self.branchButton.grid(row=3,column=0)
 
+        #Button to access Products Table
         self.productsButton = tinker.Button(self, text = "Products", 
                                             command = lambda: self.master.switchFrame(product),
                                             height= 10, width=30)
         self.productsButton.grid(row=3,column=1)
 
+        #Button to access Customers Table
         self.customerButton = tinker.Button(self, text = "Customers", 
                                             command = lambda: self.master.switchFrame(customer),
                                             height= 10, width=30)
         self.customerButton.grid(row=3,column=2)
 
+        #Button to access Employees Table
         self.employeesButton = tinker.Button(self, text = "Employees", 
                                             command = lambda: self.master.switchFrame(employee),
                                             height= 10, width=30)
         self.employeesButton.grid(row=4,column=0)
 
+        #Button to access Inventory Table
         self.inventoryButton = tinker.Button(self, text = "Inventory", 
                                             command = lambda: self.master.switchFrame(stock),
                                             height= 10, width=30)
         self.inventoryButton.grid(row=4,column=1)
         
+        #Button to access Sales Table
         self.salesButton = tinker.Button(self, text = "Sales", 
                                             command = lambda: self.master.switchFrame(sales),
                                             height= 10, width=30)
@@ -77,15 +86,20 @@ class branch(tinker.Frame):
         
         tinker.Frame.__init__(self, master)
 
+        #Column Headings for table
         self.columnHeading = ["Id", "Name", "Street", "City", "State"]
 
+        #Wrapers to place the different button, entries and labels
         self.searchWraper = tinker.LabelFrame(self,  text="Search")
         self.dataWraper = tinker.LabelFrame(self,  text="Form")
         self.tableWraper = tinker.LabelFrame(self, text="Branch Table")
  
         self.tableWraper.pack(fill="both", expand="yes", padx=20)
+        
+        #Creating Branch Table
         self.branchQuery = "SELECT * FROM Branch"
         self.branchTable = tableView(self.columnHeading, self.branchQuery, self.tableWraper)
+        #Binding Double Click to place data from table to their respective entries and labels
         self.branchTable.getTable().bind("<Double 1>", self.getRowValue)
 
         #Search Warper
@@ -130,6 +144,7 @@ class branch(tinker.Frame):
         self.mainMenu = tinker.Button(self, text="Main Menu", command=lambda: self.master.switchFrame(mainMenu))
         self.mainMenu.pack()
 
+    #Clear All Values from Entries and Labels
     def clearValues(self):
 
         self.branchId.changeValue("")
@@ -140,6 +155,7 @@ class branch(tinker.Frame):
         for i in self.listEntries:
             i.deleteEntryValue(0)
 
+    #Updates the table based on query
     def updateTable(self, query):
 
         self.clearValues()
@@ -148,15 +164,18 @@ class branch(tinker.Frame):
 
         self.branchTable.changeTable(newData)
 
+    #Reverts back table to original State
     def resetTable(self):
 
         self.updateTable(self.branchQuery)
         self.searchBlock.deleteEntryValue(0)
 
+    #Used to Search for data based on the branchNo
     def searchId(self):
 
         value = self.searchBlock.getEntryValue()
 
+        #Validates the value entered to avoid error
         if  value != "" and value.isdecimal():
 
             idQuery = self.branchQuery + " WHERE branchNo=%s"
@@ -170,10 +189,12 @@ class branch(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid Branch No for search")
 
+    #Used to search for data based on the State
     def searchState(self):
 
         value = self.stateBlock.getEntryValue()
 
+        #Validates the value entered to avoid error
         if value != "":
 
             stateQuery = self.branchQuery + " WHERE state LIKE '%" + value + "%'"
@@ -182,6 +203,7 @@ class branch(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid State for search")
 
+    #Places Table Values to Entries And Labels
     def getRowValue(self, event):
 
         table = self.branchTable.getTable()
@@ -195,6 +217,7 @@ class branch(tinker.Frame):
             
             o.entryRowValue(0, rowItems["values"][i])
 
+    #Used to insert a new row into the database
     def insertValues(self):
         
         inputs = tuple()
@@ -203,22 +226,29 @@ class branch(tinker.Frame):
             
             inputs += (i.getEntryValue(),)
 
+        #Insert Query
         insertQuery = "INSERT INTO Branch (branchName, street, city, state) VALUES (%s, %s, %s, %s)"
 
+        #Inserting and Updating the table
         insertAndDeleteDB(insertQuery, inputs)
-
         self.updateTable(self.branchQuery)
 
+    #Used to delete data from a table
     def deleteValues(self):
  
         deleteValue = (int(self.branchId.getValue()),)
 
+        #Used to Check if data is used in another table
         existQuery = "SELECT EXISTS(SELECT * FROM Employees WHERE branchNo=%s)"
         numberOfUse = valueExists(existQuery, deleteValue)
 
-        existstock = "SELECT EXISTS(SELECT * FROM Stock WHERE branchNo=%s)"
-        numberOfUse += valueExists(existstock, deleteValue)
+        existStock = "SELECT EXISTS(SELECT * FROM Stock WHERE branchNo=%s)"
+        numberOfUse += valueExists(existStock, deleteValue)
 
+        existSales = "SELECT EXISTS(SELECT * FROM Sales WHERE branchNo=%s)"
+        numberOfUse += valueExists(existSales, deleteValue)
+
+        #Ensures that if data is used it cannot be deleted
         if numberOfUse == 0:
 
             deleteQeury = "DELETE FROM Branch WHERE branchNo=%s"
@@ -234,24 +264,30 @@ class product(tinker.Frame):
         
         tinker.Frame.__init__(self, master)
 
+        #Used for table columns
         self.columnHeading = ["Id", "Name", "Type", "Price"]
 
+        #Used to store buttons, entries and Labels
         self.searchWraper = tinker.LabelFrame(self,  text="Search")
         self.dataWraper = tinker.LabelFrame(self,  text="Form")
         self.tableWraper = tinker.LabelFrame(self, text="Products Table")
  
         self.tableWraper.pack(fill="both", expand="yes", padx=20)
+        #Query for table
         self.productQuery = "SELECT * FROM Products"
+        #Creating the table
         self.productTable = tableView(self.columnHeading, self.productQuery, self.tableWraper, 150)
         self.productTable.getTable().bind("<Double 1>", self.getRowValue)
 
         #Search Warper
         self.searchWraper.pack(fill="both", expand="yes", padx=20)
+        #Labels And Entries For Search Buttons
         self.searchBlock = labelEntryView(self.searchWraper, 0, 0, "Product Id:")
         self.typeBlock = labelEntryView(self.searchWraper, 1, 0, "Product Type:")
 
         self.blockList = [self.searchBlock, self.typeBlock]
 
+        #Search Buttons
         self.searchButton = tinker.Button(self.searchWraper, command=self.searchId , text="Search")
         self.searchButton.grid(row=0, column=2)
 
@@ -283,6 +319,7 @@ class product(tinker.Frame):
         self.mainMenu = tinker.Button(self, text="Main Menu", command=lambda: self.master.switchFrame(mainMenu))
         self.mainMenu.pack()
 
+    #Clear all Values in entries and Labels
     def clearValues(self):
 
         self.productId.changeValue("")
@@ -294,17 +331,20 @@ class product(tinker.Frame):
             
             i.deleteEntryValue(0)
 
+    #Used to update table based on Query
     def updateTable(self, query):
 
         self.clearValues()
         newData = noValueQuery(query)
         self.productTable.changeTable(newData)
 
+    #Resets the table back to its original State
     def resetTable(self):
 
         self.updateTable(self.productQuery)
         self.searchBlock.deleteEntryValue(0)
 
+    #Used to search based on product id
     def searchId(self):
 
         value = self.searchBlock.getEntryValue()
@@ -319,6 +359,7 @@ class product(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid Branch No for search")
 
+    #Used to search based on product type
     def searchType(self):
 
         value = self.typeBlock.getEntryValue()
@@ -332,6 +373,7 @@ class product(tinker.Frame):
 
             messagebox.showwarning(title="Error", message="Invalid Product Type for search")
 
+    #Used to get Values from table into entries and labels
     def getRowValue(self, event):
 
         table = self.productTable.getTable()
@@ -345,6 +387,7 @@ class product(tinker.Frame):
             
             o.entryRowValue(0, rowItems["values"][i])
 
+    #Used to Insert Values into database
     def insertValues(self):
         
         inputs = tuple()
@@ -353,25 +396,33 @@ class product(tinker.Frame):
             
             inputs += (i.getEntryValue(),)
 
+        #Validation to avoid error.
         if inputs[2].replace('.','',1).isdigit():
 
             insertQuery = "INSERT INTO Products (name, type, price) VALUES (%s, %s, %s)"
+
+            #Inserts into database and update the table
             insertAndDeleteDB(insertQuery, inputs)
             self.updateTable(self.productQuery)
 
         else:
             messagebox.showwarning(title="Error", message="Invalid Price")
 
+    #Used to Delete Values from a database
     def deleteValues(self):
         
         deleteValue = (int(self.productId.getValue()),)
 
-        existQuery = "SELECT EXISTS(SELECT * FROM Stock WHERE ProductID=%s)"
+        existQuery = "SELECT EXISTS(SELECT * FROM Stock WHERE productID=%s)"
         numberOfUse = valueExists(existQuery, deleteValue)
 
+        existQuery = "SELECT EXISTS(SELECT * FROM Sales WHERE productId=%s)"
+        numberOfUse += valueExists(existQuery, deleteValue)
+
+        #Ensure that if a data is used in another table it does not get deleted
         if numberOfUse == 0:
 
-            deleteQuery = "DELETE FROM Branch WHERE branchNo=%s"
+            deleteQuery = "DELETE FROM Products WHERE productID=%s"
             insertAndDeleteDB(deleteQuery, deleteValue)
             self.updateTable(self.productQuery)
 
@@ -384,6 +435,7 @@ class customer(tinker.Frame):
         
         tinker.Frame.__init__(self, master)
 
+        #Table headings
         self.columnHeading = ["Id", "First Name", "Last Name", "Phone No."]
 
         self.searchWraper = tinker.LabelFrame(self,  text="Search")
@@ -392,6 +444,7 @@ class customer(tinker.Frame):
  
         self.tableWraper.pack(fill="both", expand="yes", padx=20)
         self.customerQuery = "SELECT * FROM Customers"
+        #Creating Table
         self.customerTable = tableView(self.columnHeading, self.customerQuery, self.tableWraper)
         self.customerTable.getTable().bind("<Double 1>", self.getRowValue)
 
@@ -433,6 +486,7 @@ class customer(tinker.Frame):
         self.mainMenu = tinker.Button(self, text="Main Menu", command=lambda: self.master.switchFrame(mainMenu))
         self.mainMenu.pack()
 
+    #Used to Clear entries and labels
     def clearValues(self):
 
         self.customerId.changeValue("")
@@ -444,17 +498,20 @@ class customer(tinker.Frame):
             
             i.deleteEntryValue(0)
 
+    #Used to Update Table
     def updateTable(self, query):
 
         self.clearValues()
         newData = noValueQuery(query)
         self.customerTable.changeTable(newData)
 
+    #Resets table
     def resetTable(self):
 
         self.updateTable(self.customerQuery)
         self.searchBlock.deleteEntryValue(0)
 
+    #Search based on Customer Id
     def searchId(self):
 
         value = self.searchBlock.getEntryValue()
@@ -471,6 +528,7 @@ class customer(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid Customer Id for search")
 
+    #Search based on Customer Name
     def searchName(self):
 
         value = self.nameBlock.getEntryValue()
@@ -483,6 +541,7 @@ class customer(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid Customer Name for search")
 
+    #Used to get data from table and insert into entries and labels
     def getRowValue(self, event):
 
         table = self.customerTable.getTable()
@@ -496,6 +555,7 @@ class customer(tinker.Frame):
             
             o.entryRowValue(0, rowItems["values"][i])
 
+    #Insert values into database
     def insertValues(self):
         
         inputs = tuple()
@@ -506,6 +566,7 @@ class customer(tinker.Frame):
 
         insertQuery = "INSERT INTO Customers (firstName, lastName, phoneNo) VALUES (%s, %s, %s)"
 
+        #Validaing the value to avoid errors
         if len(inputs[2]) == 8 and inputs[2].isdecimal:
 
             insertAndDeleteDB(insertQuery, inputs)
@@ -519,9 +580,16 @@ class customer(tinker.Frame):
         
         deleteValue = (int(self.customerId.getValue()),)
 
-        deleteQeury = "DELETE FROM Customers WHERE customerID=%s"
-        insertAndDeleteDB(deleteQeury, deleteValue)
-        self.updateTable(self.customerQuery)
+        existQuery = "SELECT EXISTS(SELECT * FROM Sales WHERE customerID=%s)"
+        numberOfUse = valueExists(existQuery, deleteValue)
+
+        if numberOfUse == 0:
+            deleteQeury = "DELETE FROM Customers WHERE customerID=%s"
+            insertAndDeleteDB(deleteQeury, deleteValue)
+            self.updateTable(self.customerQuery)
+
+        else:
+            messagebox.showwarning(title="Error", message="Value Used in Another Table")
 
 class employee(tinker.Frame):
     
@@ -529,6 +597,7 @@ class employee(tinker.Frame):
         
         tinker.Frame.__init__(self, master)
 
+        #Used For Table Column Headings
         self.columnHeading = ["Id", "First Name", "Last Name", "Position", "Gender", "Age", "Branch No", "Branch Name"]
 
         self.searchWraper = tinker.LabelFrame(self,  text="Search")
@@ -537,9 +606,11 @@ class employee(tinker.Frame):
  
         self.tableWraper.pack(fill="both", expand="yes", padx=20) 
         self.employeesQuery = "SELECT emp.employeeID, emp.firstName, emp.lastName, emp.position, emp.gender, emp.age, br.branchNo, br.branchName FROM Employees as emp JOIN Branch as br ON emp.branchNo=br.branchNo"
+        #Used to Create the table
         self.employeesTable = tableView(self.columnHeading, self.employeesQuery, self.tableWraper)
         self.employeesTable.getTable().bind("<Double 1>", self.getRowValue)
 
+        #Exist Query 
         self.branchExistQuery = "SELECT EXISTS(SELECT * FROM Branch WHERE branchNo=%s)"
 
         #Search Warper
@@ -599,6 +670,7 @@ class employee(tinker.Frame):
         self.mainMenu = tinker.Button(self, text="Main Menu", command=lambda: self.master.switchFrame(mainMenu))
         self.mainMenu.pack()
 
+    #Used to clear entires and labels
     def clearValues(self):
 
         for o in self.blockList:
@@ -610,6 +682,7 @@ class employee(tinker.Frame):
         for j in self.listEntries:
             j.deleteEntryValue(0)
 
+    #Used to update the Table
     def updateTable(self, query):
 
         self.clearValues()
@@ -618,12 +691,13 @@ class employee(tinker.Frame):
 
         self.employeesTable.changeTable(newData)
 
+    #Used to reset the table to original form
     def resetTable(self):
 
         self.updateTable(self.employeesQuery)
         self.searchBlock.deleteEntryValue(0)
 
-
+    #Search Based on Employee ID
     def searchId(self):
 
         value = self.searchBlock.getEntryValue()
@@ -640,6 +714,7 @@ class employee(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid Employees Id for search")
 
+    #Search Based on employee Name
     def searchName(self):
 
         value = self.nameBlock.getEntryValue()
@@ -652,6 +727,7 @@ class employee(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid Employee Name for search")
 
+    #Search based on employees gender
     def searchGender(self):
         
         value = self.genderBlock.getEntryValue()
@@ -666,7 +742,7 @@ class employee(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid Gender for search")
 
-
+    #search based on employees position
     def searchPosition(self):
 
         value = self.positionBlock.getEntryValue()
@@ -678,7 +754,7 @@ class employee(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid Employee Position for search")
 
-
+    #Search based on the branch they work at
     def searchBranch(self):
         
         value = self.branchBlock.getEntryValue()
@@ -692,7 +768,7 @@ class employee(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid Branch No. for search")
 
-
+    #Places table values into entries and labels
     def getRowValue(self, event):
 
         table = self.employeesTable.getTable()
@@ -707,6 +783,7 @@ class employee(tinker.Frame):
             
             o.entryRowValue(0, rowItems["values"][i])
 
+    #Used to check if a branch no exists
     def checkBranch(self):
         
         value = self.branchNo.getEntryValue()
@@ -724,6 +801,7 @@ class employee(tinker.Frame):
             else:
                 self.branchName.changeValue("null")
 
+    #Insert into database
     def insertValues(self):
         
         inputs = tuple()
@@ -735,6 +813,7 @@ class employee(tinker.Frame):
 
         exist = valueExists(self.branchExistQuery, (inputs[-1],))
 
+        #Validation to ensure that only existing branch are inputted
         if exist > 0:
 
             insertAndDeleteDB(addQuery, inputs)
@@ -743,6 +822,7 @@ class employee(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid Branch Number")
 
+    #Deletes values from database
     def deleteValues(self):
         
         deleteValue = self.employeesId.getValue()
@@ -763,6 +843,7 @@ class stock(tinker.Frame):
         
         tinker.Frame.__init__(self, master)
 
+        #Talbe column headings
         self.columnHeading = ["Stock Id", "Product Id", "Product Name", "Product Type", "Branch No.", "Branch Name", "Quantity"]
 
         self.searchWraper = tinker.LabelFrame(self,  text="Search")
@@ -771,6 +852,7 @@ class stock(tinker.Frame):
  
         self.tableWraper.pack(fill="both", expand="yes", padx=20) 
         self.stockQuery = "SELECT stk.stockId, pd.productID, pd.name, pd.type, br.branchNo, br.branchName, stk.stock FROM Stock AS stk JOIN Products AS pd ON stk.productID=pd.productId JOIN Branch AS br ON br.branchNo=stk.branchNo"
+        #Creating the table
         self.stockTable = tableView(self.columnHeading, self.stockQuery, self.tableWraper, 150)
         self.stockTable.getTable().bind("<Double 1>", self.getRowValue)
 
@@ -832,6 +914,7 @@ class stock(tinker.Frame):
         self.mainMenu = tinker.Button(self, text="Main Menu", command=lambda: self.master.switchFrame(mainMenu))
         self.mainMenu.pack()
 
+    #Clear values from entries and labels
     def clearValues(self):
 
         for o in self.blockList:
@@ -843,6 +926,7 @@ class stock(tinker.Frame):
         for j in self.listEntries:
             j.deleteEntryValue(0)
 
+    #Updates the table
     def updateTable(self, query):
 
         self.clearValues()
@@ -851,11 +935,13 @@ class stock(tinker.Frame):
 
         self.stockTable.changeTable(newData)
 
+    #Resets the table
     def resetTable(self):
 
         self.updateTable(self.stockQuery)
         self.searchBlock.deleteEntryValue(0)
 
+    #Search based on stock id
     def searchId(self):
 
         value = self.searchBlock.getEntryValue()
@@ -870,6 +956,7 @@ class stock(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid Stock Id for search")
 
+    #Search based on the branch
     def searchBranch(self):
 
         value = self.branchBlock.getEntryValue()
@@ -884,6 +971,7 @@ class stock(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid Branch No for search")
 
+    #Search based on the product id
     def searchProduct(self):
         
         value = self.productBlock.getEntryValue()
@@ -898,6 +986,7 @@ class stock(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid Product Id for search")
 
+    #search based on the product type
     def searchType(self):
         
         value = self.typeBlock.getEntryValue()
@@ -911,6 +1000,7 @@ class stock(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid Product Id for search")
 
+    #Insert values from table into entries and labels
     def getRowValue(self, event):
 
         table = self.stockTable.getTable()
@@ -928,6 +1018,7 @@ class stock(tinker.Frame):
 
         self.branchName.changeValue(rowItems["values"][labelValue[3]])
 
+    #Checks if a branch exists
     def checkBranch(self):
 
         value =self.branchNo.getEntryValue()
@@ -945,6 +1036,7 @@ class stock(tinker.Frame):
             else:
                 self.branchName.changeValue("null")
 
+    #Checks if a product exists
     def checkProduct(self):
 
         value =self.productId.getEntryValue()
@@ -964,6 +1056,7 @@ class stock(tinker.Frame):
                 self.productName.changeValue("null")
                 self.productType.changeValue("null")
 
+    #Inserts Value into database
     def insertValues(self):
         
         inputs = tuple()
@@ -976,6 +1069,7 @@ class stock(tinker.Frame):
         exist = valueExists(self.branchExistQuery, (inputs[1],))
         exist += valueExists(self.productExistQuery, (inputs[0],))
 
+        #Validation to ensure only existing values are entered
         if exist > 0:
 
             insertAndDeleteDB(addQuery, inputs)
@@ -984,6 +1078,7 @@ class stock(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid Branch No or Product Id")
 
+    #Deletes data from database
     def deleteValues(self):
         
         deleteValue = self.stockId.getValue()
@@ -1004,6 +1099,7 @@ class sales(tinker.Frame):
         
         tinker.Frame.__init__(self, master)
 
+        #Table Column Headings
         self.columnHeading = ["Sales Id", "Product Id", "Product Name", "Price", "Branch No", "Branch Name", "Customer Id", "Customer Name", "Amount", "Total", "Date Of Sale"]
 
         self.searchWraper = tinker.LabelFrame(self,  text="Search")
@@ -1012,6 +1108,7 @@ class sales(tinker.Frame):
  
         self.tableWraper.pack(fill="both", expand="yes", padx=20)
         self.salesQuery = "SELECT sl.salesId, pd.productId, pd.name, pd.price, br.branchNo, br.branchName, cs.customerID, Concat(cs.firstName, ' ', cs.lastName) as Full_Name, sl.amount, sl.total, sl.dateOfSale FROM Sales as sl JOIN Products as pd ON sl.productId=pd.productId JOIN Branch as br ON sl.branchNo=br.branchNo JOIN Customers as cs ON sl.customerID=cs.CustomerID"
+        #Creating the Table
         self.salesTable = tableView(self.columnHeading, self.salesQuery, self.tableWraper)
         self.salesTable.getTable().bind("<Double 1>", self.getRowValue)
 
@@ -1077,6 +1174,7 @@ class sales(tinker.Frame):
         self.mainMenu = tinker.Button(self, text="Main Menu", command=lambda: self.master.switchFrame(mainMenu))
         self.mainMenu.pack()
 
+    #Clear all values in entries and labels
     def clearValues(self):
 
         for o in self.blockList:
@@ -1088,6 +1186,7 @@ class sales(tinker.Frame):
         for j in self.listEntries:
             j.deleteEntryValue(0)
 
+    #Updates the table
     def updateTable(self, query):
 
         self.clearValues()
@@ -1096,11 +1195,13 @@ class sales(tinker.Frame):
 
         self.salesTable.changeTable(newData)
 
+    #Resets the table
     def resetTable(self):
 
         self.updateTable(self.salesQuery)
         self.searchBlock.deleteEntryValue(0)
 
+    #Search the table based on sales id
     def searchId(self):
 
         value = self.searchBlock.getEntryValue()
@@ -1115,6 +1216,7 @@ class sales(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid Sales Id for search")
 
+    #Search the table based on branch No
     def searchBranch(self):
 
         value = self.branchBlock.getEntryValue()
@@ -1129,6 +1231,7 @@ class sales(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid Branch No for search")
 
+    #Search the table based on product Id
     def searchProduct(self):
 
         value = self.productBlock.getEntryValue()
@@ -1143,6 +1246,7 @@ class sales(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid Product Id for search")
 
+    #Inserts table values into respected entires and labels
     def getRowValue(self, event):
 
         table = self.salesTable.getTable()
@@ -1159,6 +1263,7 @@ class sales(tinker.Frame):
         for i, o in enumerate(self.listEntries):
             o.entryRowValue(0, rowItems["values"][entriesValue[i]])
 
+    #Checks if a branch exists
     def checkBranch(self):
         
         value = self.branchNo.getEntryValue()
@@ -1176,6 +1281,7 @@ class sales(tinker.Frame):
             else:
                 self.branchName.changeValue("null")
 
+    #Checks if a product Exists
     def checkProduct(self):
 
         value =self.productId.getEntryValue()
@@ -1195,6 +1301,7 @@ class sales(tinker.Frame):
                 self.productName.changeValue("null")
                 self.productPrice.changeValue("null")
 
+    #Checks if a customer Exists
     def checkCustomer(self):
 
         value =self.customerId.getEntryValue()
@@ -1212,6 +1319,7 @@ class sales(tinker.Frame):
             else:
                 self.customerName.changeValue("null")
 
+    #Insert into database
     def insertValues(self):
         
         inputs = tuple()
@@ -1225,6 +1333,7 @@ class sales(tinker.Frame):
         exist += valueExists(self.branchExistQuery, (inputs[1],))
         exist += valueExists(self.customerExistQuery, (inputs[2],))
 
+        #Validates that only existing values are inserted
         if exist > 0:
             
             priceQuery = "SELECT price FROM Products WHERE productId=%s"
@@ -1241,6 +1350,7 @@ class sales(tinker.Frame):
         else:
             messagebox.showwarning(title="Error", message="Invalid Values Entered, \nPlease use Check Button to see Invalid Values labelled Null")
 
+    #Delete Rows From database
     def deleteValues(self):
 
         deleteValue = self.salesId.getValue()
